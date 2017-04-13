@@ -33,8 +33,11 @@ end
 
 struct Context{IO}
   io::IO
-  quotes::Vector{Any}
+  quotes::Vector{Quote}
 end
+
+Context(io::IO) = Context(io, Quote[])
+Context() = Context(IOBuffer())
 
 compile(ctx::Context, nat::BFNative) = print(ctx.io, nat.code)
 
@@ -50,14 +53,19 @@ function compile(ctx::Context, w::Word)
   compile(ctx, w.code[end])
 end
 
+function compile(ctx::Context, q::Quote)
+  push!(ctx.quotes, q)
+  compile(ctx, length(ctx.quotes))
+end
+
 words = Dict{Symbol,Any}()
 
 compile(ctx::Context, s::Symbol) = compile(ctx, words[s])
 
 function compile(x)
-  buf = IOBuffer()
-  compile(Context(buf, []), x)
-  takebuf_string(buf)
+  ctx = Context()
+  compile(ctx, x)
+  takebuf_string(ctx.io)
 end
 
 bfrun(x) = interpret(compile(x))
@@ -68,6 +76,15 @@ compilers[:while!] = function (ctx::Context, w::Word)
   else
     error("while! loop must be a compile-time quote")
   end
+end
+
+compilers[:interp] = function (ctx::Context, w::Word)
+  compile(ctx, w[1:end-1])
+  is = map(ctx.quotes) do q
+    code = @bf [stack!, q.code..., rstack!]
+    @bf [1, -, iff(Word([]), Flip(code))]
+  end
+  compile(ctx, Flip(@bf [[is..., drop], while!]))
 end
 
 iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
@@ -103,6 +120,8 @@ function move!(locs...; mode = :inc!)
   @bf [[dec!, $step], while!]
 end
 
+@bf call = [stackswitch!, interp]
+
 @bf dup = [dec!, step!(-1), move!(1),
            step!(1), move!(-1, 1), inc!,
            step!(2), inc!]
@@ -130,4 +149,7 @@ end
 
 # @bf factorial = [0, ==, [1], [dup, 1, -, factorial, *], iff]
 
-bfrun(@bf [8, dup, sq, swap, -])
+bfrun(@bf [8, [dup, *], [6, +], drop, call])
+bfrun(@bf [8, [dup, *], [6, +], swap, drop, call])
+
+bfrun(@bf [8, [dup, *], [6, +], rpush, call])
