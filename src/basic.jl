@@ -31,35 +31,40 @@ macro bf(ex)
   :(Word([$(xs...)]))
 end
 
-compile(io::IO, nat::BFNative) = print(io, nat.code)
+struct Context{IO}
+  io::IO
+  quotes::Vector{Any}
+end
 
-compile(io::IO, f::Flip) =
-  print(io, map(c -> c == '<' ? '>' : c == '>' ? '<' : c, compile(f.code)))
+compile(ctx::Context, nat::BFNative) = print(ctx.io, nat.code)
+
+compile(ctx::Context, f::Flip) =
+  print(ctx.io, map(c -> c == '<' ? '>' : c == '>' ? '<' : c, compile(f.code)))
 
 compilers = Dict{Any,Any}()
 
-function compile(io::IO, w::Word)
+function compile(ctx::Context, w::Word)
   isempty(w.code) && return
-  haskey(compilers, w.code[end]) && return compilers[w.code[end]](io, w)
-  compile(io, Word(w.code[1:end-1]))
-  compile(io, w.code[end])
+  haskey(compilers, w.code[end]) && return compilers[w.code[end]](ctx, w)
+  compile(ctx, Word(w.code[1:end-1]))
+  compile(ctx, w.code[end])
 end
 
 words = Dict{Symbol,Any}()
 
-compile(io::IO, s::Symbol) = compile(io, words[s])
+compile(ctx::Context, s::Symbol) = compile(ctx, words[s])
 
 function compile(x)
   buf = IOBuffer()
-  compile(buf, x)
+  compile(Context(buf, []), x)
   takebuf_string(buf)
 end
 
 bfrun(x) = interpret(compile(x))
 
-compilers[:while!] = function (io::IO, w::Word)
+compilers[:while!] = function (ctx::Context, w::Word)
   if length(w.code) >= 2 && w.code[end-1] isa Quote
-    compile(io, Word([w[1:end-2], BFNative("["), Word(w.code[end-1].code), BFNative("]")]))
+    compile(ctx, Word([w[1:end-2], BFNative("["), Word(w.code[end-1].code), BFNative("]")]))
   else
     error("while! loop must be a compile-time quote")
   end
@@ -76,7 +81,7 @@ iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
 
 repeated(w, i) = Word([w for _ = 1:i])
 
-compile(io::IO, i::Int) = compile(io, @bf [right!, repeated(:inc!, i), right!, inc!])
+compile(ctx::Context, i::Int) = compile(ctx, @bf [right!, repeated(:inc!, i), right!, inc!])
 
 step!(n) = repeated(n > 0 ? :right! : :left!, abs(n))
 
