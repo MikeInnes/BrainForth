@@ -1,11 +1,13 @@
 mutable struct Tape
+  count::Int
   pos::Int
   tape::Vector{UInt8}
 end
 
-Tape() = Tape(1, [0])
+Tape() = Tape(0, 1, [0])
 
 function Base.show(io::IO, t::Tape)
+  print(io, "[$(t.count)] ")
   for i = 1:length(t.tape)
     print(io, t.tape[i], i == t.pos ? "* " : " ")
   end
@@ -33,6 +35,7 @@ function interpret(t::Tape, bf::String)
   scan = 0
   ip = 1
   while ip <= length(bf)
+    t.count += 1
     op = bf[ip]
     if op == '['
       scan > 0 || t.tape[t.pos] == 0 ? (scan += 1) :
