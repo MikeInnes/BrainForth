@@ -70,6 +70,11 @@ end
 
 bfrun(x) = interpret(compile(x))
 
+@bf inc!   = [BFNative("+")]
+@bf dec!   = [BFNative("-")]
+@bf left!  = [BFNative("<")]
+@bf right! = [BFNative(">")]
+
 compilers[:while!] = function (ctx::Context, w::Word)
   if length(w.code) >= 2 && w.code[end-1] isa Quote
     compile(ctx, Word([w[1:end-2], BFNative("["), Word(w.code[end-1].code), BFNative("]")]))
@@ -77,24 +82,6 @@ compilers[:while!] = function (ctx::Context, w::Word)
     error("while! loop must be a compile-time quote")
   end
 end
-
-compilers[:interp] = function (ctx::Context, w::Word)
-  compile(ctx, w[1:end-1])
-  is = map(ctx.quotes) do q
-    code = @bf [stack!, q.code..., rstack!]
-    @bf [1, -, iff(Word([]), Flip(code))]
-  end
-  compile(ctx, Flip(@bf [[is..., drop], while!]))
-end
-
-iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
-                 [$f, dec!, right!], while!,
-                 left!, inc!]
-
-@bf inc!   = [BFNative("+")]
-@bf dec!   = [BFNative("-")]
-@bf left!  = [BFNative("<")]
-@bf right! = [BFNative(">")]
 
 repeated(w, i) = Word([w for _ = 1:i])
 
@@ -112,6 +99,20 @@ step!(n) = repeated(n > 0 ? :right! : :left!, abs(n))
 @bf rpush = [stackswitch!, stack!]
 @bf rpop = [rstack!, Flip(:stackswitch!)]
 
+iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
+                 [$f, dec!, right!], while!,
+                 left!, inc!]
+
+compilers[:interp!] = function (ctx::Context, w::Word)
+  compile(ctx, w[1:end-1])
+  is = map(ctx.quotes) do q
+    code = @bf [stack!, q.code..., rstack!]
+    code = @bf [drop, Flip(code), 0]
+    @bf [1, -, iff(Word([]), code)]
+  end
+  compile(ctx, Flip(@bf [[is..., drop], while!, rstack!]))
+end
+
 @bf reset! = [[dec!], while!]
 
 function move!(locs...; mode = :inc!)
@@ -119,8 +120,6 @@ function move!(locs...; mode = :inc!)
   step = Word([@bf [step!(l), $mode, step!(-l)] for l in locs])
   @bf [[dec!, $step], while!]
 end
-
-@bf call = [stackswitch!, interp]
 
 @bf dup = [dec!, step!(-1), move!(1),
            step!(1), move!(-1, 1), inc!,
@@ -142,14 +141,20 @@ end
          [dec!, right!, move!(1, -2), right!, move!(-1), step!(-2)], while!,
          right!, reset!, left!, inc!]
 
+# End of macros
+
+@bf call = [stackswitch!, interp!]
+
 @bf != = [-]
 @bf == = [-, !]
 
 @bf sq = [dup, *]
 
+@bf dip = [swap, rpush, [rpop], rpush, call]
+
 # @bf factorial = [0, ==, [1], [dup, 1, -, factorial, *], iff]
 
-bfrun(@bf [8, [dup, *], [6, +], drop, call])
-bfrun(@bf [8, [dup, *], [6, +], swap, drop, call])
+# bfrun(@bf [8, [dup, *], [6, +], drop, call])
+# bfrun(@bf [8, [dup, *], [6, +], swap, drop, call])
 
-bfrun(@bf [8, [dup, *], [6, +], rpush, call])
+bfrun(@bf [8, 5, [dup, *], dip])
