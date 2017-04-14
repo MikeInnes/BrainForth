@@ -51,6 +51,12 @@ lower(w::Word) =
 lower(w::Symbol) =
   haskey(words, w) ? lower(words[w]) : w
 
+flip(w::Native) = w.code == ">" ? Native("<") : w.code == "<" ? Native(">") : w
+flip(w::Word) = Word(flip.(w.code))
+flip(w::Quote) = Quote(flip.(w.code))
+
+lower(w::Flip) = flip(lower(w.code))
+
 function flatten(w::Word)
   w′ = Word([])
   for w in w.code
@@ -70,9 +76,6 @@ Context() = Context(IOBuffer())
 const compiles = Dict{Symbol,Any}()
 
 compile(ctx::Context, nat::Native) = print(ctx.io, nat.code)
-
-compile(ctx::Context, f::Flip) =
-  print(ctx.io, map(c -> c == '<' ? '>' : c == '>' ? '<' : c, compile(f.code)))
 
 function compile(ctx::Context, w::Word)
   isempty(w.code) && return
