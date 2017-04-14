@@ -94,7 +94,7 @@ bfrun(x) = interpret(compile(x))
 @bf dec!   = [Native("-")]
 @bf left!  = [Native("<")]
 @bf right! = [Native(">")]
-@bf bug!   = [Native("!")]
+@bf debug! = [Native("#")]
 
 lowers[:while!] = function (w::Word)
   if length(w.code) >= 2 && w.code[end-1] isa Quote
