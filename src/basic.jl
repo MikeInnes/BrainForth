@@ -141,6 +141,9 @@ end
 @bf over = [dec!, step!(-3), move!(3),
             step!(3), move!(-3, 1), inc!, step!(2), inc!]
 
+@bf pick = [dec!, step!(-5), move!(5),
+            step!(5), move!(-5, 1), inc!, step!(2), inc!]
+
 @bf drop = [dec!, left!, reset!, left!]
 
 @bf ! = [left!, [right!, dec!, left!, reset!], while!, # Set flag, reset
