@@ -57,10 +57,10 @@ end
 
 struct Context{IO}
   io::IO
-  quotes::Vector{Quote}
+  icode::Vector{Any}
 end
 
-Context(io::IO) = Context(io, Quote[])
+Context(io::IO) = Context(io, [])
 Context() = Context(IOBuffer())
 
 const compiles = Dict{Symbol,Any}()
@@ -78,10 +78,16 @@ function compile(ctx::Context, w::Word)
   end
 end
 
-function compile(ctx::Context, q::Quote)
-  push!(ctx.quotes, q)
-  compile(ctx, lower(length(ctx.quotes)))
+function bytecode(ctx::Context, code)
+  n = findfirst(ctx.icode, code)
+  n == 0 && (push!(ctx.icode, code); n = length(ctx.icode))
+  return n
 end
+
+compile(ctx::Context, q::Quote) =
+  compile(ctx, lower(bytecode(ctx, Word(q.code))))
+
+compile(ctx::Context, w::Symbol) = compile(ctx, lower(words[w]))
 
 function compile(x)
   ctx = Context()
@@ -160,7 +166,7 @@ lowers[:call] = w -> @bf [lower(w[1:end-1]), call]
 
 compiles[:interp!] = function (ctx::Context, w::Word)
   compile(ctx, w[1:end-1])
-  is = map(ctx.quotes) do q
+  is = map(ctx.icode) do q
     code = @bf [stack!, q.code..., rstack!]
     code = @bf [drop, Flip(code), 0]
     @bf [1, -, iff(Word([]), code)]
