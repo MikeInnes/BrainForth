@@ -104,6 +104,14 @@ iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
                  [$f, dec!, right!], while!,
                  left!, inc!]
 
+compilers[:iff] = function (ctx::Context, w::Word)
+  length(w.code) ≥ 3 && w.code[end-1] isa Quote && w.code[end-2] isa Quote ||
+    return compile_(ctx, w)
+  compile(ctx, w[1:end-3])
+  t, f = map(i -> @bf([drop, Word(w.code[end-i].code), 0]), (2, 1))
+  compile(ctx, @bf [iff(t, f), drop])
+end
+
 compilers[:interp!] = function (ctx::Context, w::Word)
   compile(ctx, w[1:end-1])
   is = map(ctx.quotes) do q
@@ -151,10 +159,10 @@ end
 
 @bf != = [-]
 @bf == = [-, !]
-
 @bf sq = [dup, *]
 
 @bf dip = [swap, rpush, [rpop], rpush, call]
+@bf iff = [pick, [drop, call], [swap, drop, call], iff]
 
 # @bf factorial = [0, ==, [1], [dup, 1, -, factorial, *], iff]
 
