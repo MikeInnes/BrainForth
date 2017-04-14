@@ -46,11 +46,15 @@ compile(ctx::Context, f::Flip) =
 
 compilers = Dict{Any,Any}()
 
+function compile_(ctx::Context, w::Word)
+  compile(ctx, Word(w.code[1:end-1]))
+  compile(ctx, w.code[end])
+end
+
 function compile(ctx::Context, w::Word)
   isempty(w.code) && return
   haskey(compilers, w.code[end]) && return compilers[w.code[end]](ctx, w)
-  compile(ctx, Word(w.code[1:end-1]))
-  compile(ctx, w.code[end])
+  compile_(ctx, w)
 end
 
 function compile(ctx::Context, q::Quote)
@@ -80,7 +84,7 @@ compilers[:while!] = function (ctx::Context, w::Word)
   if length(w.code) >= 2 && w.code[end-1] isa Quote
     compile(ctx, Word([w[1:end-2], BFNative("["), Word(w.code[end-1].code), BFNative("]")]))
   else
-    error("while! loop must be a compile-time quote")
+    compile_(ctx, w)
   end
 end
 
