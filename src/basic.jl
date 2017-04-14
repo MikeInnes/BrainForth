@@ -21,6 +21,10 @@ end
 
 Quote(w::Word) = Quote(w.code)
 
+for T in [Native, Flip, Word, Quote]
+  @eval Base.:(==)(a::$T, b::$T) = a.code == b.code
+end
+
 const words = Dict{Symbol,Any}()
 
 macro bf(ex)
@@ -117,6 +121,8 @@ lower(i::Int) = lower(@bf [right!, repeated(:inc!, i), right!, inc!])
 
 step!(n) = repeated(n > 0 ? :right! : :left!, abs(n))
 
+@bf pass = []
+
 @bf stack! = [[step!(2)], while!, step!(2), [step!(2)], while!, step!(-2)]
 @bf rstack! = [Flip(:stack!)]
 
@@ -164,12 +170,24 @@ end
 
 lowers[:call] = w -> @bf [lower(w[1:end-1]), call]
 
+lower_quotes(ctx, x) = x
+lower_quotes(ctx, w::Quote) = bytecode(ctx, Word(map(x -> lower_quotes(ctx, x), w.code)))
+lower_quotes(ctx, w::Word) = Word(map(x -> lower_quotes(ctx, x), w.code))
+
 compiles[:interp!] = function (ctx::Context, w::Word)
   compile(ctx, w[1:end-1])
-  is = map(ctx.icode) do q
-    code = @bf [stack!, q.code..., rstack!]
-    code = @bf [drop, Flip(code), 0]
-    @bf [1, -, iff(Word([]), code)]
+  is, i = [], 1
+  while i ≤ length(ctx.icode)
+    q = ctx.icode[i]
+    q == :call && (q = :rpush)
+    q = lower_quotes(ctx, q)
+    code = if q isa Word && any(x->x==:call, q.code)
+      Word(reverse([bytecode(ctx, w) for w in q.code]))
+    else
+      Flip(@bf [stack!, $q, rstack!])
+    end
+    push!(is, @bf [1, -, iff(:pass, @bf [drop, $code, 0])])
+    i += 1
   end
   compile(ctx, lower(Flip(@bf [[is..., drop], while!, rstack!])))
 end
@@ -200,3 +218,4 @@ end
 bfrun(@bf [1, [10], [5], iff])
 bfrun(@bf [8, [dup, *], [6, +], drop, call])
 bfrun(@bf [8, [dup, *], [6, +], swap, drop, call])
+bfrun(@bf [8, [[dup, *], call], call])
