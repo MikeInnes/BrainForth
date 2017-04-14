@@ -28,7 +28,7 @@ clip(n) = n > 255 ? n - 256 : n < 0 ? n + 256 : n
 inc!(t::Tape) = (t.tape[t.pos] = clip(t.tape[t.pos] + 1))
 dec!(t::Tape) = (t.tape[t.pos] = clip(t.tape[t.pos] - 1))
 
-const bfchars = Dict('+' => inc!, '-' => dec!, '<' => left!, '>' => right!)
+const bfchars = Dict('+' => inc!, '-' => dec!, '<' => left!, '>' => right!, '!' => println)
 
 function interpret(t::Tape, bf::String)
   loops = Int[]
@@ -46,7 +46,6 @@ function interpret(t::Tape, bf::String)
       (ip = loops[end])
     elseif scan == 0 && haskey(bfchars, op)
       bfchars[op](t)
-      # println(t)
     end
     ip += 1
   end

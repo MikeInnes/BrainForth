@@ -74,6 +74,7 @@ bfrun(x) = interpret(compile(x))
 @bf dec!   = [BFNative("-")]
 @bf left!  = [BFNative("<")]
 @bf right! = [BFNative(">")]
+@bf bug!   = [BFNative("!")]
 
 compilers[:while!] = function (ctx::Context, w::Word)
   if length(w.code) >= 2 && w.code[end-1] isa Quote
@@ -160,4 +161,4 @@ end
 # bfrun(@bf [8, [dup, *], [6, +], drop, call])
 # bfrun(@bf [8, [dup, *], [6, +], swap, drop, call])
 
-bfrun(@bf [8, 5, [dup, *], dip])
+bfrun(@bf [8, 5, [dup, *, bug!], dip])
