@@ -1,6 +1,6 @@
 using MacroTools
 
-struct BFNative
+struct Native
   code::String
 end
 
@@ -21,6 +21,8 @@ end
 
 Quote(w::Word) = Quote(w.code)
 
+const words = Dict{Symbol,Any}()
+
 macro bf(ex)
   @capture(ex, x_ = [w__]) && return :(words[$(Expr(:quote, x))] = @bf [$(esc.(w)...)])
   @capture(ex, [xs__])
@@ -31,6 +33,27 @@ macro bf(ex)
   :(Word([$(xs...)]))
 end
 
+const lowers = Dict{Symbol,Any}()
+
+lower(x) = x
+
+lower_(w::Word) = Word([lower(w[1:end-1]).code..., lower(w.code[end])])
+
+lower(w::Word) =
+  isempty(w.code) ? w :
+  haskey(lowers, w.code[end]) ? lowers[w.code[end]](w) :
+    lower_(w)
+
+lower(w::Symbol) = lower(words[w])
+
+function flatten(w::Word)
+  w′ = Word([])
+  for w in w.code
+    w isa Word ? append!(w′.code, flatten(w).code) : push!(w′.code, w)
+  end
+  return w′
+end
+
 struct Context{IO}
   io::IO
   quotes::Vector{Quote}
@@ -39,58 +62,51 @@ end
 Context(io::IO) = Context(io, Quote[])
 Context() = Context(IOBuffer())
 
-compile(ctx::Context, nat::BFNative) = print(ctx.io, nat.code)
+const compiles = Dict{Symbol,Any}()
+
+compile(ctx::Context, nat::Native) = print(ctx.io, nat.code)
 
 compile(ctx::Context, f::Flip) =
   print(ctx.io, map(c -> c == '<' ? '>' : c == '>' ? '<' : c, compile(f.code)))
 
-compilers = Dict{Any,Any}()
-
-function compile_(ctx::Context, w::Word)
-  compile(ctx, Word(w.code[1:end-1]))
-  compile(ctx, w.code[end])
-end
-
 function compile(ctx::Context, w::Word)
   isempty(w.code) && return
-  haskey(compilers, w.code[end]) && return compilers[w.code[end]](ctx, w)
-  compile_(ctx, w)
+  haskey(compiles, w.code[end]) && return compiles[w.code[end]](ctx, w)
+  for w in w.code
+    compile(ctx, w)
+  end
 end
 
 function compile(ctx::Context, q::Quote)
   push!(ctx.quotes, q)
-  compile(ctx, length(ctx.quotes))
+  compile(ctx, lower(length(ctx.quotes)))
 end
-
-words = Dict{Symbol,Any}()
-
-compile(ctx::Context, s::Symbol) = compile(ctx, words[s])
 
 function compile(x)
   ctx = Context()
-  compile(ctx, x)
+  compile(ctx, lower(x))
   takebuf_string(ctx.io)
 end
 
 bfrun(x) = interpret(compile(x))
 
-@bf inc!   = [BFNative("+")]
-@bf dec!   = [BFNative("-")]
-@bf left!  = [BFNative("<")]
-@bf right! = [BFNative(">")]
-@bf bug!   = [BFNative("!")]
+@bf inc!   = [Native("+")]
+@bf dec!   = [Native("-")]
+@bf left!  = [Native("<")]
+@bf right! = [Native(">")]
+@bf bug!   = [Native("!")]
 
-compilers[:while!] = function (ctx::Context, w::Word)
+lowers[:while!] = function (w::Word)
   if length(w.code) >= 2 && w.code[end-1] isa Quote
-    compile(ctx, Word([w[1:end-2], BFNative("["), Word(w.code[end-1].code), BFNative("]")]))
+    lower(Word([w[1:end-2], Native("["), Word(w.code[end-1].code), Native("]")]))
   else
-    compile_(ctx, w)
+    lower_(w)
   end
 end
 
 repeated(w, i) = Word([w for _ = 1:i])
 
-compile(ctx::Context, i::Int) = compile(ctx, @bf [right!, repeated(:inc!, i), right!, inc!])
+lower(i::Int) = lower(@bf [right!, repeated(:inc!, i), right!, inc!])
 
 step!(n) = repeated(n > 0 ? :right! : :left!, abs(n))
 
@@ -104,35 +120,13 @@ step!(n) = repeated(n > 0 ? :right! : :left!, abs(n))
 @bf rpush = [stackswitch!, stack!]
 @bf rpop = [rstack!, Flip(:stackswitch!)]
 
-iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
-                 [$f, dec!, right!], while!,
-                 left!, inc!]
-
-compilers[:iff] = function (ctx::Context, w::Word)
-  length(w.code) ≥ 3 && w.code[end-1] isa Quote && w.code[end-2] isa Quote ||
-    return compile_(ctx, w)
-  compile(ctx, w[1:end-3])
-  t, f = map(i -> @bf([drop, Word(w.code[end-i].code), 0]), (2, 1))
-  compile(ctx, @bf [iff(t, f), drop])
-end
-
-compilers[:interp!] = function (ctx::Context, w::Word)
-  compile(ctx, w[1:end-1])
-  is = map(ctx.quotes) do q
-    code = @bf [stack!, q.code..., rstack!]
-    code = @bf [drop, Flip(code), 0]
-    @bf [1, -, iff(Word([]), code)]
-  end
-  compile(ctx, Flip(@bf [[is..., drop], while!, rstack!]))
-end
-
-@bf reset! = [[dec!], while!]
-
 function move!(locs...; mode = :inc!)
   @assert !any(x -> x == 0, locs)
   step = Word([@bf [step!(l), $mode, step!(-l)] for l in locs])
   @bf [[dec!, $step], while!]
 end
+
+@bf reset! = [[dec!], while!]
 
 @bf dup = [dec!, step!(-1), move!(1),
            step!(1), move!(-1, 1), inc!,
@@ -150,6 +144,31 @@ end
 
 @bf drop = [dec!, left!, reset!, left!]
 
+iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
+                 [$f, dec!, right!], while!,
+                 left!, inc!]
+
+lowers[:iff] = function (w::Word)
+  length(w.code) ≥ 3 && w.code[end-1] isa Quote && w.code[end-2] isa Quote ||
+    return lower_(w)
+  t, f = map(i -> @bf([drop, Word(w.code[end-i].code), 0]), (2, 1))
+  lower(@bf [w[1:end-3], iff(t, f), drop])
+end
+
+lowers[:interp!] = w -> @bf [lower(w[1:end-1]), interp!]
+
+compiles[:interp!] = function (ctx::Context, w::Word)
+  compile(ctx, w[1:end-1])
+  is = map(ctx.quotes) do q
+    code = @bf [stack!, q.code..., rstack!]
+    code = @bf [drop, Flip(code), 0]
+    @bf [1, -, iff(Word([]), code)]
+  end
+  compile(ctx, lower(Flip(@bf [[is..., drop], while!, rstack!])))
+end
+
+@bf call = [stackswitch!, interp!]
+
 @bf ! = [left!, [right!, dec!, left!, reset!], while!, # Set flag, reset
          right!, [left!, inc!, right!, dec!], while!, inc!]
 
@@ -160,9 +179,7 @@ end
          [dec!, right!, move!(1, -2), right!, move!(-1), step!(-2)], while!,
          right!, reset!, left!, inc!]
 
-# End of macros
-
-@bf call = [stackswitch!, interp!]
+# End of bootstrap
 
 @bf != = [-]
 @bf == = [-, !]
@@ -173,7 +190,6 @@ end
 
 # @bf factorial = [0, ==, [1], [dup, 1, -, factorial, *], iff]
 
-# bfrun(@bf [8, [dup, *], [6, +], drop, call])
-# bfrun(@bf [8, [dup, *], [6, +], swap, drop, call])
-
-bfrun(@bf [8, 5, [dup, *, bug!], dip])
+bfrun(@bf [1, [10], [5], iff])
+bfrun(@bf [8, [dup, *], [6, +], drop, call])
+bfrun(@bf [8, [dup, *], [6, +], swap, drop, call])
