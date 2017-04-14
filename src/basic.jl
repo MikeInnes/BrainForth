@@ -20,6 +20,7 @@ struct Quote
 end
 
 Quote(w::Word) = Quote(w.code)
+Word(q::Quote) = Word(q.code)
 
 for T in [Native, Flip, Word, Quote]
   @eval Base.:(==)(a::$T, b::$T) = a.code == b.code
@@ -92,7 +93,7 @@ function bytecode(ctx::Context, code)
 end
 
 compile(ctx::Context, q::Quote) =
-  compile(ctx, lower(bytecode(ctx, Word(q.code))))
+  compile(ctx, lower(bytecode(ctx, Word(q))))
 
 compile(ctx::Context, w::Symbol) = compile(ctx, lower(words[w]))
 
@@ -167,7 +168,7 @@ iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
 lowers[:iff] = function (w::Word)
   length(w.code) ≥ 3 && w.code[end-1] isa Quote && w.code[end-2] isa Quote ||
     return lower_(w)
-  t, f = map(i -> @bf([drop, Word(w.code[end-i].code), 0]), (2, 1))
+  t, f = map(i -> @bf([drop, Word(w.code[end-i]), 0]), (2, 1))
   lower(@bf [w[1:end-3], iff(t, f), drop])
 end
 
