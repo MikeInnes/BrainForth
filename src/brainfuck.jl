@@ -14,11 +14,13 @@ function Base.show(io::IO, t::Tape)
 end
 
 function left!(t::Tape)
+  t.pos == length(t.tape) && t.tape[end] == 0 && pop!(t.tape)
   t.pos == 1 ? unshift!(t.tape, 0) : (t.pos -= 1)
   return
 end
 
 function right!(t::Tape)
+  t.pos == 1 && t.tape[1] == 0 && (shift!(t.tape); t.pos -= 1)
   t.pos == length(t.tape) && push!(t.tape, 0)
   t.pos += 1
   return
