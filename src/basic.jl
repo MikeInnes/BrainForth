@@ -44,7 +44,8 @@ lower(w::Word) =
   haskey(lowers, w.code[end]) ? lowers[w.code[end]](w) :
     lower_(w)
 
-lower(w::Symbol) = lower(words[w])
+lower(w::Symbol) =
+  haskey(words, w) ? lower(words[w]) : w
 
 function flatten(w::Word)
   w′ = Word([])
@@ -155,7 +156,7 @@ lowers[:iff] = function (w::Word)
   lower(@bf [w[1:end-3], iff(t, f), drop])
 end
 
-lowers[:interp!] = w -> @bf [lower(w[1:end-1]), interp!]
+lowers[:call] = w -> @bf [lower(w[1:end-1]), call]
 
 compiles[:interp!] = function (ctx::Context, w::Word)
   compile(ctx, w[1:end-1])
