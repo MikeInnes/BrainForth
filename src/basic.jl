@@ -1,3 +1,5 @@
+import Base: ==
+
 using MacroTools
 
 struct Native
@@ -12,18 +14,18 @@ struct Word
   code::Vector{Any}
 end
 
-Base.getindex(w::Word, i::AbstractArray) = Word(w.code[i])
-Base.endof(w::Word) = endof(w.code)
-
 struct Quote
   code::Vector{Any}
 end
+
+Base.getindex(w::Word, i::AbstractArray) = Word(w.code[i])
+Base.endof(w::Word) = endof(w.code)
 
 Quote(w::Word) = Quote(w.code)
 Word(q::Quote) = Word(q.code)
 
 for T in [Native, Flip, Word, Quote]
-  @eval Base.:(==)(a::$T, b::$T) = a.code == b.code
+  @eval a::$T == b::$T = a.code == b.code
 end
 
 const words = Dict{Symbol,Any}()
@@ -179,17 +181,34 @@ lower_quotes(ctx, x) = x
 lower_quotes(ctx, w::Quote) = bytecode(ctx, Word(w))
 lower_quotes(ctx, w::Word) = Word(map(x -> lower_quotes(ctx, x), w.code))
 
+function partition(w::Word)
+  w′ = Word([])
+  cur = Word([])
+  for w in w.code
+    if w == :call
+      push!(cur.code, :rpush)
+      push!(w′.code, cur)
+      cur = Word([])
+    else
+      push!(cur.code, w)
+    end
+  end
+  !isempty(cur.code) && push!(w′.code, cur)
+  return w′
+end
+
 compiles[:interp!] = function (ctx::Context, w::Word)
   compile(ctx, w[1:end-1])
   is, i = [], 1
   while i ≤ length(ctx.icode)
     q = ctx.icode[i]
-    q == :call && (q = :rpush)
-    code = if q isa Word && any(x->x==:call, q.code)
-      Word(reverse([bytecode(ctx, w) for w in q.code]))
+    q isa Word && (q = partition(flatten(lower(q))))
+    code = if q isa Word && length(q.code) > 1
+      Word(reverse(@show [bytecode(ctx, w) for w in q.code]))
     else
       Flip(@bf [stack!, $(lower_quotes(ctx, q)), rstack!])
     end
+    code = Flip(@bf [stack!, $(lower_quotes(ctx, q)), rstack!])
     push!(is, @bf [1, -, iff(:pass, @bf [drop, $code, 0])])
     i += 1
   end
@@ -223,3 +242,4 @@ bfrun(@bf [1, [10], [5], iff])
 bfrun(@bf [8, [dup, *], [6, +], drop, call])
 bfrun(@bf [8, [dup, *], [6, +], swap, drop, call])
 bfrun(@bf [8, [[dup, *], call], call])
+bfrun(@bf [8, 4, [dup, *], [5, +], [dip], dip, call])
