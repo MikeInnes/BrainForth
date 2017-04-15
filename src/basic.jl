@@ -52,9 +52,10 @@ lower(w::Word) =
 lower(w::Symbol) =
   haskey(words, w) ? lower(words[w]) : w
 
+flip(x) = Flip(x)
+flip(f::Flip) = f.code
 flip(w::Native) = w.code == ">" ? Native("<") : w.code == "<" ? Native(">") : w
 flip(w::Word) = Word(flip.(w.code))
-flip(w::Quote) = Quote(flip.(w.code))
 
 lower(w::Flip) = flip(lower(w.code))
 
@@ -175,7 +176,7 @@ end
 lowers[:call] = w -> @bf [lower(w[1:end-1]), call]
 
 lower_quotes(ctx, x) = x
-lower_quotes(ctx, w::Quote) = bytecode(ctx, Word(map(x -> lower_quotes(ctx, x), w.code)))
+lower_quotes(ctx, w::Quote) = bytecode(ctx, Word(w))
 lower_quotes(ctx, w::Word) = Word(map(x -> lower_quotes(ctx, x), w.code))
 
 compiles[:interp!] = function (ctx::Context, w::Word)
@@ -184,11 +185,10 @@ compiles[:interp!] = function (ctx::Context, w::Word)
   while i ≤ length(ctx.icode)
     q = ctx.icode[i]
     q == :call && (q = :rpush)
-    q = lower_quotes(ctx, q)
     code = if q isa Word && any(x->x==:call, q.code)
       Word(reverse([bytecode(ctx, w) for w in q.code]))
     else
-      Flip(@bf [stack!, $q, rstack!])
+      Flip(@bf [stack!, $(lower_quotes(ctx, q)), rstack!])
     end
     push!(is, @bf [1, -, iff(:pass, @bf [drop, $code, 0])])
     i += 1
