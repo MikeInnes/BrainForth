@@ -30,15 +30,15 @@ clip(n) = n > 255 ? n - 256 : n < 0 ? n + 256 : n
 inc!(t::Tape) = (t.tape[t.pos] = clip(t.tape[t.pos] + 1))
 dec!(t::Tape) = (t.tape[t.pos] = clip(t.tape[t.pos] - 1))
 
-const bfchars = Dict('+' => inc!, '-' => dec!, '<' => left!, '>' => right!, '#' => println)
+# Gets ~0.15 GHz
 
-function interpret(t::Tape, bf::String)
+function interpret(t::Tape, bf)
   loops = Int[]
   scan = 0
   ip = 1
   while ip <= length(bf)
     t.count += 1
-    op = bf[ip]
+    @inbounds op = bf[ip]
     if op == '['
       scan > 0 || t.tape[t.pos] == 0 ? (scan += 1) :
       push!(loops, ip)
@@ -46,12 +46,17 @@ function interpret(t::Tape, bf::String)
       scan > 0 ? (scan -= 1) :
       t.tape[t.pos] == 0 ? pop!(loops) :
       (ip = loops[end])
-    elseif scan == 0 && haskey(bfchars, op)
-      bfchars[op](t)
+    elseif scan == 0
+      op == '+' ? inc!(t) :
+      op == '-' ? dec!(t) :
+      op == '<' ? left!(t) :
+      op == '>' ? right!(t) :
+      op == '#' ? println(t) :
+        nothing
     end
     ip += 1
   end
   return t
 end
 
-interpret(bf::String) = interpret(Tape(), bf)
+interpret(bf) = interpret(Tape(), bf)
