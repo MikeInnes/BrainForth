@@ -204,11 +204,10 @@ compiles[:interp!] = function (ctx::Context, w::Word)
     q = ctx.icode[i]
     q isa Word && (q = partition(flatten(lower(q))))
     code = if q isa Word && length(q.code) > 1
-      Word(reverse(@show [bytecode(ctx, w) for w in q.code]))
+      Word(reverse([bytecode(ctx, w) for w in q.code]))
     else
       Flip(@bf [stack!, $(lower_quotes(ctx, q)), rstack!])
     end
-    code = Flip(@bf [stack!, $(lower_quotes(ctx, q)), rstack!])
     push!(is, @bf [1, -, iff(:pass, @bf [drop, $code, 0])])
     i += 1
   end
