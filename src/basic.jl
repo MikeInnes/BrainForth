@@ -94,7 +94,8 @@ function compile(x)
   takebuf_string(ctx.io)
 end
 
-bfrun(x) = interpret(compile(x))
+bfrun(t::Tape, x) = interpret(t, compile(x))
+bfrun(x) = bfrun(Tape(), x)
 
 @bf inc!   = [Native("+")]
 @bf dec!   = [Native("-")]

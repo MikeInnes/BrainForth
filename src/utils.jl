@@ -13,3 +13,13 @@ end
 macro run(ex)
   :(bfrun(@bf($(esc(ex)))))
 end
+
+function stack(t::Tape)
+  stk = similar(t.tape, 0)
+  bfrun(t, @bf [[step!(-2)], while!])
+  while get(t.tape, t.pos + 2, 0) ≠ 0
+    push!(stk, t.tape[t.pos + 1])
+    t.pos += 2
+  end
+  return stk
+end
