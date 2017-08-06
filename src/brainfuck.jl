@@ -13,6 +13,8 @@ function Base.show(io::IO, t::Tape)
   end
 end
 
+Base.:(==)(a::Tape, b::Tape) = a.tape == b.tape
+
 function left!(t::Tape)
   t.pos == length(t.tape) && t.tape[end] == 0 && pop!(t.tape)
   t.pos == 1 ? unshift!(t.tape, 0) : (t.pos -= 1)

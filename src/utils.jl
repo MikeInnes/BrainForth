@@ -9,3 +9,7 @@ macro bf(ex)
         esc(x) for x in xs]
   :(Word([$(xs...)]))
 end
+
+macro run(ex)
+  :(bfrun(@bf($(esc(ex)))))
+end
