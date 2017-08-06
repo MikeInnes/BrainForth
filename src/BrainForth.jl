@@ -1,5 +1,7 @@
 module BrainForth
 
-# package code goes here
+include("brainfuck.jl")
+include("utils.jl")
+include("basic.jl")
 
 end # module
