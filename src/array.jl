@@ -14,5 +14,10 @@
 @bf fold = [[isempty], dip2, rotl,
             [drop, nip], [fold_], iff]
 
+@bf pushe = [[isempty], dip, swap,
+             [nip, 1], [[pop], dip, swap, [pushe], dip, push], iff]
+
+@bf reverse = [isempty, [pop, [reverse], dip, pushe], unless]
+
 @bf sum = [0, [+], fold]
 @bf prod = [1, [*], fold]

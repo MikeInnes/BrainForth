@@ -43,6 +43,7 @@ end
   @test stack(@run [5, range, sum]) == [15]
   @test stack(@run [5, range, prod]) == [120]
   @test stack(@run [5, range, [sq], map, sum]) == [55]
+  @test stack(@run [5, range, reverse]) == [1, 2, 3, 4, 5, 5]
 end
 
 end
