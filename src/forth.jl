@@ -54,3 +54,6 @@
 @bf iff = [rotl, [], [swap], if!, drop, call]
 @bf when = [[], iff]
 @bf unless = [[], swap, iff]
+
+@bf loop = [over, dip2, rotl,
+            [dup, dip2, loop], [drop, drop], iff]
