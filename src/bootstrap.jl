@@ -147,15 +147,15 @@ end
 
 @bf drop = [dec!, left!, reset!, left!]
 
-iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
+if!(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
                  [$f, dec!, right!], while!,
                  left!, inc!]
 
-lowers[:iff] = function (w::Word)
+lowers[:if!] = function (w::Word)
   length(w.code) ≥ 3 && w.code[end-1] isa Quote && w.code[end-2] isa Quote ||
     return lower_(w)
   t, f = map(i -> @bf([drop, Word(w.code[end-i]), 0]), (2, 1))
-  lower(@bf [w[1:end-3], iff(t, f), drop])
+  lower(@bf [w[1:end-3], if!(t, f), drop])
 end
 
 lowers[:call] = w -> @bf [lower(w[1:end-1]), call]
@@ -191,7 +191,7 @@ compiles[:interp!] = function (ctx::Context, w::Word)
     else
       Flip(@bf [stack!, $(lower_quotes(ctx, q)), rstack!])
     end
-    push!(is, @bf [1, -, iff(:pass, @bf [drop, $code, 0])])
+    push!(is, @bf [1, -, if!(:pass, @bf [drop, $code, 0])])
     i += 1
   end
   compile(ctx, lower(Flip(@bf [[is..., drop], while!, rstack!])))

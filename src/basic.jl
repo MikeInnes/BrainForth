@@ -51,6 +51,6 @@
 # x y f -- fx fy
 @bf bia = [dup, bi_] # bi@
 
-@bf iff = [rotl, [], [swap], iff, drop, call]
+@bf iff = [rotl, [], [swap], if!, drop, call]
 @bf when = [[], iff]
 @bf unless = [[], swap, iff]
