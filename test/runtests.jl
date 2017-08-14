@@ -1,4 +1,4 @@
-using BrainForth: @run, stack
+using BrainForth: @bf, @run, stack
 using Base.Test
 
 @testset "BrainForth" begin
@@ -29,5 +29,8 @@ using Base.Test
 @test @run([10, 1, [1, +], [1, -], pass, iff]) == @run([11])
 @test @run([10, 0, [1, +], [1, -], pass, iff]) == @run([ 9])
 @test @run([10, 1, [[[1, +], call], [[1, -], call], pass, iff], call]) == @run([11])
+
+@bf factorial = [dup, 1, ==, [dup, 1, -, factorial, *], unless]
+@test stack(@run([5, factorial])) == [120]
 
 end
