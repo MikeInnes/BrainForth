@@ -38,9 +38,9 @@ function interpret(t::Tape, bf)
   loops = Int[]
   scan = 0
   ip = 1
-  while ip <= length(bf)
+  @inbounds while ip <= length(bf)
     t.count += 1
-    @inbounds op = bf[ip]
+    op = bf[ip]
     if op == '['
       scan > 0 || t.tape[t.pos] == 0 ? (scan += 1) :
       push!(loops, ip)
@@ -60,5 +60,7 @@ function interpret(t::Tape, bf)
   end
   return t
 end
+
+interpret(t::Tape, bf::String) = interpret(t, collect(bf))
 
 interpret(bf) = interpret(Tape(), bf)
