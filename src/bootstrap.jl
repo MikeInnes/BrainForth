@@ -101,6 +101,8 @@ bfrun(x) = bfrun(Tape(), x)
 @bf dec!   = [Native("-")]
 @bf left!  = [Native("<")]
 @bf right! = [Native(">")]
+@bf read!  = [Native(",")]
+@bf write! = [Native(".")]
 @bf debug! = [Native("#")]
 
 lowers[:while!] = function (w::Word)

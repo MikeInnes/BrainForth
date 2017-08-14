@@ -35,9 +35,17 @@ clip(n) = n > 255 ? n - 256 : n < 0 ? n + 256 : n
 inc!(t::Tape) = (t[] = clip(t[] + 1))
 dec!(t::Tape) = (t[] = clip(t[] - 1))
 
+function read!(t::Tape, io::IO)
+  t[] = read(io, UInt8)
+end
+
+function write!(t::Tape, io::IO)
+  write(io, t[])
+end
+
 # Gets ~370 MHz
 
-function interpret(t::Tape, bf)
+function interpret(t::Tape, bf; input::IO = STDIN, output::IO = STDOUT)
   loops = Int[]
   scan = 0
   ip = 1
@@ -56,6 +64,8 @@ function interpret(t::Tape, bf)
       op == '-' ? dec!(t) :
       op == '<' ? left!(t) :
       op == '>' ? right!(t) :
+      op == ',' ? read!(t, input) :
+      op == '.' ? write!(t, output) :
       op == '#' ? println(t) :
         nothing
     end
@@ -64,6 +74,6 @@ function interpret(t::Tape, bf)
   return t
 end
 
-interpret(t::Tape, bf::String) = interpret(t, collect(bf))
+interpret(t::Tape, bf::String; kws...) = interpret(t, collect(bf); kws...)
 
-interpret(bf) = interpret(Tape(), bf)
+interpret(bf; kws...) = interpret(Tape(), bf; kws...)
