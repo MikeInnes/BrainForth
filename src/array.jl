@@ -22,5 +22,9 @@ lower(s::String) = lower(Word([s..., length(s)]))
 
 @bf reverse = [isempty, [pop, [reverse], dip, pushe], unless]
 
+@bf swapvb = [pushe, 1, -]
+@bf swapvv_ = [isempty, [drop], [pop, [swapvv_], dip, swapvb], iff]
+@bf swapvv = [[swapvv_], keep, swapvb]
+
 @bf sum = [0, [+], fold]
 @bf prod = [1, [*], fold]
