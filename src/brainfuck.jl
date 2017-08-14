@@ -32,7 +32,7 @@ clip(n) = n > 255 ? n - 256 : n < 0 ? n + 256 : n
 inc!(t::Tape) = (t.tape[t.pos] = clip(t.tape[t.pos] + 1))
 dec!(t::Tape) = (t.tape[t.pos] = clip(t.tape[t.pos] - 1))
 
-# Gets ~0.15 GHz
+# Gets ~370 MHz
 
 function interpret(t::Tape, bf)
   loops = Int[]
