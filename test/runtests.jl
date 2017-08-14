@@ -28,6 +28,7 @@ using Base.Test
 @test stack(@run([10, 0, [1, +], [1, -], iff])) == [ 9]
 @test stack(@run([10, 1, [1, +], [1, -], pass, iff])) == [11]
 @test stack(@run([10, 0, [1, +], [1, -], pass, iff])) == [ 9]
+# TODO: fix the inlined version of `iff` to allow this
 @test stack(@run([10, 1, [[[1, +], call], [[1, -], call], pass, iff], call])) == [11]
 
 @bf factorial = [dup, 1, ==, [dup, 1, -, factorial, *], unless]
