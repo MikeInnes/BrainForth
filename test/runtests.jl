@@ -39,4 +39,10 @@ end
   @test stack(@run([7, fib])) == [13]
 end
 
+@testset "Arrays" begin
+  @test stack(@run [5, range, sum]) == [15]
+  @test stack(@run [5, range, prod]) == [120]
+  @test stack(@run [5, range, [sq], map, sum]) == [55]
+end
+
 end
