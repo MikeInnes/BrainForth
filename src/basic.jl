@@ -227,12 +227,3 @@ end
 @bf bia = [dup, bi_] # bi@
 
 @bf iff = [pick, [drop, call], [swap, drop, call], iff]
-
-# @bf factorial = [0, ==, [1], [dup, 1, -, factorial, *], iff]
-
-bfrun(@bf [1, [10], [5], iff])
-bfrun(@bf [8, [dup, *], [6, +], drop, call])
-bfrun(@bf [8, [dup, *], [6, +], swap, drop, call])
-bfrun(@bf [8, [[dup, *], call], call])
-bfrun(@bf [8, 4, [dup, *], [5, +], [dip], dip, call])
-bfrun(@bf [8, [sq], [3, +], bi])
