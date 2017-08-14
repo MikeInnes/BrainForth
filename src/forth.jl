@@ -57,3 +57,5 @@
 
 @bf loop = [over, dip2, rotl,
             [dup, dip2, loop], [drop, drop], iff]
+
+@bf doloop = [tuck, [call], dip2, loop]

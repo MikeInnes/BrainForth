@@ -1,5 +1,5 @@
 lower(c::Char) = lower(Int(c))
-lower(s::String) = lower(Word([s..., length(s)]))
+lower(s::String) = lower(Word([reverse(s)..., length(s)]))
 
 @bf nil = [0]
 @bf push = [swap, 1, +]
@@ -8,6 +8,9 @@ lower(s::String) = lower(Word([s..., length(s)]))
 @bf isempty = [dup, !]
 
 @bf range = [[[dup, 1, !=], [dup, 1, -], loop], keep]
+
+@bf each = [[isempty], dip, swap,
+            [drop, drop], [[pop], dip, [call], keep, each], iff]
 
 @bf map_ = [[pop], dip, tuck, call, [map], dip, push]
 @bf map = [[isempty], dip, swap,
