@@ -1,3 +1,6 @@
+lower(c::Char) = lower(Int(c))
+lower(s::String) = lower(Word([s..., length(s)]))
+
 @bf nil = [0]
 @bf push = [swap, 1, +]
 @bf pop = [1, -, swap]
