@@ -145,12 +145,6 @@ end
             step!(2), move!(-2),
             step!(-1), move!(1), inc!, step!(2)]
 
-@bf over = [dec!, step!(-3), move!(3),
-            step!(3), move!(-3, 1), inc!, step!(2), inc!]
-
-@bf pick = [dec!, step!(-5), move!(5),
-            step!(5), move!(-5, 1), inc!, step!(2), inc!]
-
 @bf drop = [dec!, left!, reset!, left!]
 
 iff(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
@@ -222,7 +216,12 @@ end
 @bf sq = [dup, *]
 
 @bf dip = [swap, rpush, [rpop], rpush, call]
+
+@bf nip = [swap, drop]
+@bf over = [[dup], dip, swap]
 @bf keep = [over, [call], dip]
+@bf rot = [[swap], dip, swap]
+
 @bf bi = [[keep], dip, call]
 @bf bi_ = [[dip], dip, call] # bi*
 @bf bia = [dup, bi_] # bi@

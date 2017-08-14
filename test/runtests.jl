@@ -6,7 +6,6 @@ using Base.Test
 @test @run([8, 5, dup])  == @run([8, 5, 5])
 @test @run([8, 5, swap]) == @run([5, 8])
 @test @run([8, 5, drop]) == @run([8])
-@test @run([8, 5, over]) == @run([8, 5, 8])
 
 @test @run([0, !])     == @run([1])
 @test @run([8, !])     == @run([0])
@@ -15,7 +14,10 @@ using Base.Test
 @test @run([8, 5, *])  == @run([40])
 
 @test @run([8, 5, [1, +], dip])         == @run([9, 5])
+@test @run([8, 5, nip])                 == @run([5])
+@test @run([8, 5, over])                == @run([8, 5, 8])
 @test @run([8, 5, [sq], keep])          == @run([8, 25, 5])
+@test @run([1, 2, 3, rot])              == @run([2, 3, 1])
 @test @run([8, 5, [1, +], [1, -], bi])  == @run([8, 6, 4])
 @test @run([8, 5, [1, +], [1, -], bi_]) == @run([9, 4])
 @test @run([8, 5, [1, +], bia])         == @run([9, 6])
