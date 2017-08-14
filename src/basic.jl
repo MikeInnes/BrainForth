@@ -213,6 +213,8 @@ end
 
 @bf != = [-]
 @bf == = [-, !]
+@bf or = [+]
+@bf and = [*]
 @bf sq = [dup, *]
 
 @bf dip = [swap, rpush, [rpop], rpush, call]

@@ -33,4 +33,9 @@ using Base.Test
 @bf factorial = [dup, 1, ==, [dup, 1, -, factorial, *], unless]
 @test stack(@run([5, factorial])) == [120]
 
+@bf fib = [dup, [1, ==], [0, ==], bi, or,
+                [[1, -, fib], [2, -, fib], bi, +], unless]
+
+@test stack(@run([7, fib])) == [13]
+
 end
