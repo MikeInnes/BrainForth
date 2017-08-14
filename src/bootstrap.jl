@@ -91,7 +91,7 @@ compile(ctx::Context, w::Symbol) = compile(ctx, lower(words[w]))
 function compile(x)
   ctx = Context()
   compile(ctx, lower(x))
-  takebuf_string(ctx.io)
+  String(take!(ctx.io))
 end
 
 bfrun(t::Tape, x) = interpret(t, compile(x))
