@@ -6,6 +6,9 @@ end
 
 Tape() = Tape(0, 1, [0])
 
+Base.getindex(t::Tape) = t.tape[t.pos]
+Base.setindex!(t::Tape, v) = t.tape[t.pos] = v
+
 function Base.show(io::IO, t::Tape)
   print(io, "[$(t.count)] ")
   for i = 1:length(t.tape)
@@ -29,8 +32,8 @@ function right!(t::Tape)
 end
 
 clip(n) = n > 255 ? n - 256 : n < 0 ? n + 256 : n
-inc!(t::Tape) = (t.tape[t.pos] = clip(t.tape[t.pos] + 1))
-dec!(t::Tape) = (t.tape[t.pos] = clip(t.tape[t.pos] - 1))
+inc!(t::Tape) = (t[] = clip(t[] + 1))
+dec!(t::Tape) = (t[] = clip(t[] - 1))
 
 # Gets ~370 MHz
 
@@ -42,11 +45,11 @@ function interpret(t::Tape, bf)
     t.count += 1
     op = bf[ip]
     if op == '['
-      scan > 0 || t.tape[t.pos] == 0 ? (scan += 1) :
+      scan > 0 || t[] == 0 ? (scan += 1) :
       push!(loops, ip)
     elseif op == ']'
       scan > 0 ? (scan -= 1) :
-      t.tape[t.pos] == 0 ? pop!(loops) :
+      t[] == 0 ? pop!(loops) :
       (ip = loops[end])
     elseif scan == 0
       op == '+' ? inc!(t) :
