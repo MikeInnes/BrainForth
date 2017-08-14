@@ -16,17 +16,41 @@
 @bf and = [*]
 @bf sq = [dup, *]
 
+# x f -- x
 @bf dip = [swap, rpush, [rpop], rpush, call]
+#  x y f -- x y
+@bf dip2 = [swap, [dip], dip]
 
+# x y -- y
 @bf nip = [swap, drop]
-@bf over = [[dup], dip, swap]
-@bf keep = [over, [call], dip]
-@bf rot = [[swap], dip, swap]
+# x y -- x x y
+@bf dupd = [[dup], dip]
+# x y -- x y x
+@bf over = [dupd, swap]
+# x y -- x y x y
+@bf dup2 = [over, over]
+# x y -- y x y
+@bf tuck = [swap, over]
+# x y z -- x y z x
+@bf pick = [[over], dip, swap]
+# x y z -- y x z
+@bf swapd = [[swap], dip]
+# x y z -- y z x
+@bf rotl = [swapd, swap]
+# x y z -- z x y
+@bf rotr = [swap, swapd]
 
+# x f -- x
+@bf keep = [dupd, dip]
+# x y f -- x y
+@bf keep2 = [[dup2], dip, dip2]
+# x f g -- fx gx
 @bf bi = [[keep], dip, call]
+# x y f g -- fx gy
 @bf bi_ = [[dip], dip, call] # bi*
+# x y f -- fx fy
 @bf bia = [dup, bi_] # bi@
 
-@bf iff = [rot, [], [swap], iff, drop, call]
+@bf iff = [rotl, [], [swap], iff, drop, call]
 @bf when = [[], iff]
 @bf unless = [[], swap, iff]

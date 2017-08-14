@@ -17,7 +17,7 @@ using Base.Test
 @test stack(@run([8, 5, nip]))                 == [5]
 @test stack(@run([8, 5, over]))                == [8, 5, 8]
 @test stack(@run([8, 5, [sq], keep]))          == [8, 25, 5]
-@test stack(@run([1, 2, 3, rot]))              == [2, 3, 1]
+@test stack(@run([1, 2, 3, rotl]))             == [2, 3, 1]
 @test stack(@run([8, 5, [1, +], [1, -], bi]))  == [8, 6, 4]
 @test stack(@run([8, 5, [1, +], [1, -], bi_])) == [9, 4]
 @test stack(@run([8, 5, [1, +], bia]))         == [9, 6]
