@@ -26,5 +26,8 @@ using Base.Test
 
 @test @run([10, 1, [1, +], [1, -], iff]) == @run([11])
 @test @run([10, 0, [1, +], [1, -], iff]) == @run([ 9])
+@test @run([10, 1, [1, +], [1, -], pass, iff]) == @run([11])
+@test @run([10, 0, [1, +], [1, -], pass, iff]) == @run([ 9])
+@test @run([10, 1, [[[1, +], call], [[1, -], call], pass, iff], call]) == @run([11])
 
 end

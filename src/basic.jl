@@ -226,4 +226,6 @@ end
 @bf bi_ = [[dip], dip, call] # bi*
 @bf bia = [dup, bi_] # bi@
 
-@bf iff = [pick, [drop, call], [swap, drop, call], iff]
+@bf iff = [rot, [], [swap], iff, drop, call]
+@bf when = [[], iff]
+@bf unless = [[], swap, iff]
