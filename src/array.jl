@@ -17,6 +17,8 @@ lower(s::String) = lower(Word([reverse(s)..., length(s)]))
 
 @bf swapvb = [pushe, 1, -]
 
+@bf dropv = [isempty, [drop], [pop, drop, dropv], iff]
+
 @bf dipv = [[isempty], dip, swap,
             [dip], [[pop], dip, swap, [dipv], dip, push], iff]
 
@@ -28,6 +30,8 @@ lower(s::String) = lower(Word([reverse(s)..., length(s)]))
              [swapvb, [push], dipv], keep, # xs:x, ys, x
              push], # xs:x, ys:y
             iff]
+
+@bf keepv = [[dupv], dip, dipv]
 
 # Array lib
 
