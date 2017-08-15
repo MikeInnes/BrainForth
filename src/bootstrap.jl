@@ -200,3 +200,7 @@ compiles[:interp!] = function (ctx::Context, w::Word)
 end
 
 @bf call = [stackswitch!, interp!]
+
+@bf empty! = [[drop], while!]
+
+@bf halt = [[rstack!, Flip(:empty!)], call]
