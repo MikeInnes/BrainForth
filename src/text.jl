@@ -6,3 +6,5 @@
 
 @bf readln_ = [nil, [head, '\n', !=], [read, push], doloop]
 @bf readln = [readln_, reverse]
+
+@bf panic = ["PANIC: ", cat, println, halt]
