@@ -4,7 +4,7 @@
 @bf print = [[write], each]
 @bf println = ['\n', pushe, print]
 
-@bf readln_ = [nil, [head, '\n', !=], [read, push], doloop]
+@bf readln_ = [nil, [head, '\n', !=], [read, push], doloop, pop, drop]
 @bf readln = [readln_, reverse]
 
 @bf panic = ["PANIC: ", cat, println, halt]
