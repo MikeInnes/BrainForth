@@ -5,7 +5,8 @@ lower(s::String) = lower(Word([reverse(s)..., length(s)]))
 @bf push = [swap, 1, +]
 @bf pop = [1, -, swap]
 @bf head = [over]
-@bf isempty = [dup, !]
+@bf length = [dup]
+@bf isempty = [length, !]
 
 @bf range = [[[dup, 1, !=], [dup, 1, -], loop], keep]
 
