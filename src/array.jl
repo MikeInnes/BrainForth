@@ -12,6 +12,9 @@ lower(s::String) = lower(Word([reverse(s)..., length(s)]))
 
 @bf cat = [isempty, [drop], [pop, [cat], dip, push], iff]
 
+@bf dipv = [[isempty], dip, swap,
+            [dip], [[pop], dip, swap, [dipv], dip, push], iff]
+
 @bf each = [[isempty], dip, swap,
             [drop, drop], [[pop], dip, [call], keep, each], iff]
 
