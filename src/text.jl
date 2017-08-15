@@ -8,3 +8,9 @@
 @bf readln = [readln_, reverse]
 
 @bf panic = ["PANIC: ", cat, println, halt]
+
+@bf prompt = [print, readln]
+
+@bf whileempty_ = [[isempty], dip, swap,
+                   [[drop], dip, [call], keep, whileempty_], [drop], iff]
+@bf whileempty = [nil, swap, whileempty_]
