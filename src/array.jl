@@ -9,6 +9,8 @@ lower(s::String) = lower(Word([reverse(s)..., length(s)]))
 
 @bf range = [[[dup, 1, !=], [dup, 1, -], loop], keep]
 
+@bf cat = [isempty, [drop], [pop, [cat], dip, push], iff]
+
 @bf each = [[isempty], dip, swap,
             [drop, drop], [[pop], dip, [call], keep, each], iff]
 
