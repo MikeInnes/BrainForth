@@ -2,7 +2,7 @@
 @bf write = [left!, write!, right!, drop]
 
 @bf print = [[write], each]
-@bf println = ['\n', pushe, print]
+@bf println = [print, '\n', write]
 
 @bf readln_ = [nil, [head, '\n', !=], [read, push], doloop, pop, drop]
 @bf readln = [readln_, reverse]
