@@ -1,5 +1,5 @@
 lower(c::Char) = lower(Int(c))
-lower(s::String) = lower(Word([reverse(s)..., length(s)]))
+lower(s::String) = lower(Word([s..., length(s)]))
 
 # Basic array ops
 
@@ -43,6 +43,9 @@ lower(s::String) = lower(Word([reverse(s)..., length(s)]))
 
 @bf each = [[isempty], dip, swap,
             [drop, drop], [[pop], dip, [call], keep, each], iff]
+
+@bf eachr = [[isempty], dip, swap,
+             [drop, drop], [[pop], dip, tuck, [eachr], dip2, call], iff]
 
 @bf map_ = [[pop], dip, tuck, call, [map], dip, push]
 @bf map = [[isempty], dip, swap,

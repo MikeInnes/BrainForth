@@ -1,13 +1,12 @@
 @bf read = [right!, read!, right!, inc!]
 @bf write = [left!, write!, right!, drop]
 
-@bf print = [[write], each]
+@bf print = [[write], eachr]
 @bf println = [print, '\n', write]
 
-@bf readln_ = [nil, [head, '\n', !=], [read, push], doloop, pop, drop]
-@bf readln = [readln_, reverse]
+@bf readln = [nil, [head, '\n', !=], [read, push], doloop, pop, drop]
 
-@bf panic = ["PANIC: ", cat, println, halt]
+@bf panic = ["PANIC: ", print, println, halt]
 
 @bf prompt = [print, readln]
 
