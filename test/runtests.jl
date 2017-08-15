@@ -40,10 +40,10 @@ end
 end
 
 @testset "Arrays" begin
-  @test stack(@run [5, range, sum]) == [15]
-  @test stack(@run [5, range, prod]) == [120]
-  @test stack(@run [5, range, [sq], map, sum]) == [55]
-  @test stack(@run [5, range, reverse]) == [1, 2, 3, 4, 5, 5]
+  @test stack(@run [5, iota, sum]) == [15]
+  @test stack(@run [5, iota, prod]) == [120]
+  @test stack(@run [5, iota, [sq], map, sum]) == [55]
+  @test stack(@run [5, iota, reverse]) == [1, 2, 3, 4, 5, 5]
   @test @run(["foo", "bar", swapvv]) == @run(["bar", "foo"])
 end
 

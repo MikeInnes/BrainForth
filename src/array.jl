@@ -31,7 +31,7 @@ lower(s::String) = lower(Word([reverse(s)..., length(s)]))
 
 # Array lib
 
-@bf range = [[[dup, 1, !=], [dup, 1, -], loop], keep]
+@bf iota = [[[dup, 1, !=], [dup, 1, -], loop], keep]
 
 @bf cat = [isempty, [drop], [pop, [cat], dip, push], iff]
 
