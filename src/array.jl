@@ -35,5 +35,11 @@ lower(s::String) = lower(Word([reverse(s)..., length(s)]))
 @bf swapvv_ = [isempty, [drop], [pop, [swapvv_], dip, swapvb], iff]
 @bf swapvv = [[swapvv_], keep, swapvb]
 
+@bf dupv = [isempty, [dup],
+            [pop, [dupv], dip, # xs, ys, x
+             [swapvb, [push], dipv], keep, # xs:x, ys, x
+             push], # xs:x, ys:y
+            iff]
+
 @bf sum = [0, [+], fold]
 @bf prod = [1, [*], fold]
