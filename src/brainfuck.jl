@@ -77,3 +77,5 @@ end
 interpret(t::Tape, bf::String; kws...) = interpret(t, collect(bf); kws...)
 
 interpret(bf; kws...) = interpret(Tape(), bf; kws...)
+
+runfile(path::String) = interpret(readstring(path))

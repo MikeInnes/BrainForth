@@ -88,6 +88,15 @@ compile(ctx::Context, q::Quote) =
 
 compile(ctx::Context, w::Symbol) = compile(ctx, lower(words[w]))
 
+function compile(io::IO, x)
+  compile(Context(io), lower(x))
+  return
+end
+
+function compile(path::String, x)
+  open(io -> compile(io, x), path, "w")
+end
+
 function compile(x)
   ctx = Context()
   compile(ctx, lower(x))
