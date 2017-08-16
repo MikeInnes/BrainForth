@@ -8,6 +8,12 @@
          [dec!, right!, move!(1, -2), right!, move!(-1), step!(-2)], while!,
          right!, reset!, left!, inc!]
 
+@bf < = [left!, move!(-1), left!, dec!, left!, move!(2), right!,
+         [right!, right!,
+          if!(:pass, @bf [step!(-3), inc!, right!, reset!, step!(2)]),
+          left!, dec!, left!, dec!], while!,
+         inc!, step!(2), drop]
+
 # End of unsafe operations
 
 @bf != = [-]
