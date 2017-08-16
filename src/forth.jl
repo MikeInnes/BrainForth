@@ -20,6 +20,10 @@
 @bf == = [-, !]
 @bf or = [+]
 @bf and = [*]
+@bf <= = [[==], [<], bi2, or]
+@bf > = [swap, <]
+@bf >= = [swap, <=]
+
 @bf sq = [dup, *]
 
 # x f -- x
@@ -52,6 +56,8 @@
 @bf keep2 = [[dup2], dip, dip2]
 # x f g -- fx gx
 @bf bi = [[keep], dip, call]
+# x y f g -- fxy gxy
+@bf bi2 = [[keep2], dip, call]
 # x y f g -- fx gy
 @bf bi_ = [[dip], dip, call] # bi*
 # x y f -- fx fy
