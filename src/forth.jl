@@ -1,4 +1,4 @@
-lower(ctx, i::Int) = lower(ctx, @bf [right!, repeated(:inc!, i), right!, inc!])
+literal(i::Int) = @bf [right!, repeated(:inc!, i), right!, inc!]
 
 @bf swap = [step!(-2), dec!, step!(-1), move!(1),
             step!(2), move!(-2),

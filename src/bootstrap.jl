@@ -1,4 +1,4 @@
-import Base: ==
+import Base: ==, @get!
 
 macro bf(ex)
   @capture(ex, x_ = [w__]) && return :(words[$(Expr(:quote, x))] = @bf [$(esc.(w)...)])
@@ -23,9 +23,13 @@ Base.endof(w::Word) = endof(w.code)
 
 struct Context
   icode::Vector{Any}
+  cache::Dict{Symbol,Any}
 end
 
-Context() = Context([])
+Context() = Context([], Dict())
+
+literal(ctx, x) = literal(x)
+literal(x) = x
 
 const cwords = Dict{Symbol,Any}()
 
@@ -33,15 +37,23 @@ lower(ctx, x) = x
 
 lower_(ctx, w::Word) = Word([lower(ctx, w[1:end-1]).code..., lower(ctx, w.code[end])])
 
-lower(ctx, w::Word) =
-  isempty(w.code) ? w :
-  haskey(cwords, w.code[end]) ? cwords[w.code[end]](ctx, w) :
-    lower_(ctx, w)
+function lower(ctx, w::Word)
+  w′ = Word([])
+  for i = length(w.code):-1:1
+    if haskey(cwords, w.code[i])
+      unshift!(w′.code, cwords[w.code[i]](ctx, w[1:i]))
+      return w′
+    else
+      unshift!(w′.code, literal(ctx, w.code[i]))
+    end
+  end
+  return w′
+end
 
 const words = Dict{Symbol,Any}()
 
 inline(ctx, x) = x
-inline(ctx, w::Symbol) = inline(ctx, words[w])
+inline(ctx, w::Symbol) = @get!(ctx.cache, w, inline(ctx, words[w]))
 inline(ctx, w::Word) = Word(inline.(ctx, lower(ctx, w).code))
 
 function flatten(w::Word)
@@ -137,7 +149,7 @@ function bytecode(ctx::Context, code)
   return n
 end
 
-lower(ctx, w::Quote) = lower(ctx, bytecode(ctx, Word(w)))
+literal(ctx, w::Quote) = literal(bytecode(ctx, Word(w)))
 
 struct Call end
 
