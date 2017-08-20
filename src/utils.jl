@@ -1,14 +1,7 @@
-using MacroTools
+compile(path::String, bf) = open(io -> write(io, compile(bf)), path, "w")
 
-macro bf(ex)
-  @capture(ex, x_ = [w__]) && return :(words[$(Expr(:quote, x))] = @bf [$(esc.(w)...)])
-  @capture(ex, [xs__])
-  xs = [isexpr(x, :$) ? esc(x.args[1]) :
-        isexpr(x, Symbol) ? Expr(:quote, x) :
-        @capture(x, [w__]) ? :(Quote(@bf [$(esc.(w)...)])) :
-        esc(x) for x in xs]
-  :(Word([$(xs...)]))
-end
+bfrun(t::Tape, x) = interpret(t, compile(x))
+bfrun(x) = bfrun(Tape(), x)
 
 macro run(ex)
   :(bfrun(@bf($(esc(ex)))))
@@ -16,10 +9,14 @@ end
 
 function stack(t::Tape)
   stk = similar(t.tape, 0)
-  bfrun(t, @bf [[step!(-2)], while!])
+  interpret(t, "[<<]")
   while get(t.tape, t.pos + 2, 0) ≠ 0
     push!(stk, t.tape[t.pos + 1])
     t.pos += 2
   end
   return stk
+end
+
+for T in [Native, Flip, Word, Quote]
+  @eval a::$T == b::$T = a.code == b.code
 end

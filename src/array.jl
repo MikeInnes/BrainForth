@@ -1,5 +1,5 @@
-lower(c::Char) = lower(Int(c))
-lower(s::String) = lower(Word([s..., length(s)]))
+lower(ctx, c::Char) = lower(ctx, Int(c))
+lower(ctx, s::String) = lower(ctx, Word([s..., length(s)]))
 
 # Basic array ops
 

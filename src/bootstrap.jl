@@ -1,53 +1,48 @@
 import Base: ==
 
-struct Native
-  code::String
+macro bf(ex)
+  @capture(ex, x_ = [w__]) && return :(words[$(Expr(:quote, x))] = @bf [$(esc.(w)...)])
+  @capture(ex, [xs__])
+  xs = [isexpr(x, :$) ? esc(x.args[1]) :
+        isexpr(x, Symbol) ? Expr(:quote, x) :
+        @capture(x, [w__]) ? :(Quote(@bf [$(esc.(w)...)])) :
+        esc(x) for x in xs]
+  :(Word([$(xs...)]))
 end
 
-struct Flip
-  code::Any
+struct Native
+  code::String
 end
 
 struct Word
   code::Vector{Any}
 end
 
-struct Quote
-  code::Vector{Any}
-end
-
 Base.getindex(w::Word, i::AbstractArray) = Word(w.code[i])
 Base.endof(w::Word) = endof(w.code)
 
-Quote(w::Word) = Quote(w.code)
-Word(q::Quote) = Word(q.code)
-
-for T in [Native, Flip, Word, Quote]
-  @eval a::$T == b::$T = a.code == b.code
+struct Context
+  icode::Vector{Any}
 end
+
+Context() = Context([])
+
+const cwords = Dict{Symbol,Any}()
+
+lower(ctx, x) = x
+
+lower_(ctx, w::Word) = Word([lower(ctx, w[1:end-1]).code..., lower(ctx, w.code[end])])
+
+lower(ctx, w::Word) =
+  isempty(w.code) ? w :
+  haskey(cwords, w.code[end]) ? cwords[w.code[end]](ctx, w) :
+    lower_(ctx, w)
 
 const words = Dict{Symbol,Any}()
 
-const lowers = Dict{Symbol,Any}()
-
-lower(x) = x
-
-lower_(w::Word) = Word([lower(w[1:end-1]).code..., lower(w.code[end])])
-
-lower(w::Word) =
-  isempty(w.code) ? w :
-  haskey(lowers, w.code[end]) ? lowers[w.code[end]](w) :
-    lower_(w)
-
-lower(w::Symbol) =
-  haskey(words, w) ? lower(words[w]) : w
-
-flip(x) = Flip(x)
-flip(f::Flip) = f.code
-flip(w::Native) = w.code == ">" ? Native("<") : w.code == "<" ? Native(">") : w
-flip(w::Word) = Word(flip.(w.code))
-
-lower(w::Flip) = flip(lower(w.code))
+inline(ctx, x) = x
+inline(ctx, w::Symbol) = inline(ctx, words[w])
+inline(ctx, w::Word) = Word(inline.(ctx, lower(ctx, w).code))
 
 function flatten(w::Word)
   w′ = Word([])
@@ -57,54 +52,13 @@ function flatten(w::Word)
   return w′
 end
 
-struct Context{IO}
-  io::IO
-  icode::Vector{Any}
-end
-
-Context(io::IO) = Context(io, [])
-Context() = Context(IOBuffer())
-
-const compiles = Dict{Symbol,Any}()
-
-compile(ctx::Context, nat::Native) = print(ctx.io, nat.code)
-
-function compile(ctx::Context, w::Word)
-  isempty(w.code) && return
-  haskey(compiles, w.code[end]) && return compiles[w.code[end]](ctx, w)
-  for w in w.code
-    compile(ctx, w)
+function compile_static(ctx, x)
+  c = flatten(inline(ctx, x))
+  for x in c.code
+    x isa Native || error("Couldn't compile $x")
   end
+  join(map(c -> c.code, c.code))
 end
-
-function bytecode(ctx::Context, code)
-  n = findfirst(ctx.icode, code)
-  n == 0 && (push!(ctx.icode, code); n = length(ctx.icode))
-  return n
-end
-
-compile(ctx::Context, q::Quote) =
-  compile(ctx, lower(bytecode(ctx, Word(q))))
-
-compile(ctx::Context, w::Symbol) = compile(ctx, lower(words[w]))
-
-function compile(io::IO, x)
-  compile(Context(io), lower(x))
-  return
-end
-
-function compile(path::String, x)
-  open(io -> compile(io, x), path, "w")
-end
-
-function compile(x)
-  ctx = Context()
-  compile(ctx, lower(x))
-  String(take!(ctx.io))
-end
-
-bfrun(t::Tape, x) = interpret(t, compile(x))
-bfrun(x) = bfrun(Tape(), x)
 
 @bf inc!   = [Native("+")]
 @bf dec!   = [Native("-")]
@@ -114,17 +68,33 @@ bfrun(x) = bfrun(Tape(), x)
 @bf write! = [Native(".")]
 @bf debug! = [Native("#")]
 
-lowers[:while!] = function (w::Word)
+struct Quote
+  code::Vector{Any}
+end
+
+Quote(w::Word) = Quote(w.code)
+Word(q::Quote) = Word(q.code)
+
+struct Flip
+  code::Any
+end
+
+flip(x) = Flip(x)
+flip(x::Flip) = x.code
+flip(w::Native) = w.code == ">" ? Native("<") : w.code == "<" ? Native(">") : w
+
+lower(ctx, w::Flip) = Flip(lower(ctx, w.code))
+inline(ctx, w::Flip) = Word(flip.(flatten(inline(ctx, w.code)).code))
+
+cwords[:while!] = function (ctx, w::Word)
   if length(w.code) >= 2 && w.code[end-1] isa Quote
-    lower(Word([w[1:end-2], Native("["), Word(w.code[end-1].code), Native("]")]))
+    lower(ctx, Word([w[1:end-2], Native("["), Word(w.code[end-1].code), Native("]")]))
   else
-    lower_(w)
+    lower_(ctx, w)
   end
 end
 
 repeated(w, i) = Word([w for _ = 1:i])
-
-lower(i::Int) = lower(@bf [right!, repeated(:inc!, i), right!, inc!])
 
 step!(n) = repeated(n > 0 ? :right! : :left!, abs(n))
 
@@ -148,38 +118,36 @@ end
 
 @bf reset! = [[dec!], while!]
 
-@bf dup = [dec!, step!(-1), move!(1),
-           step!(1), move!(-1, 1), inc!,
-           step!(2), inc!]
-
-@bf swap = [step!(-2), dec!, step!(-1), move!(1),
-            step!(2), move!(-2),
-            step!(-1), move!(1), inc!, step!(2)]
-
 @bf drop = [dec!, left!, reset!, left!]
 
 if!(t, f) = @bf [left!, [right!, $t, dec!], while!, right!,
                  [$f, dec!, right!], while!,
                  left!, inc!]
 
-lowers[:if!] = function (w::Word)
+cwords[:if!] = function (ctx, w::Word)
   length(w.code) ≥ 3 && w.code[end-1] isa Quote && w.code[end-2] isa Quote ||
-    return lower_(w)
+    return lower_(ctx, w)
   t, f = map(i -> @bf([drop, Word(w.code[end-i]), 0]), (2, 1))
-  lower(@bf [w[1:end-3], if!(t, f), drop])
+  lower(ctx, @bf [w[1:end-3], if!(t, f), drop])
 end
 
-lowers[:call] = w -> @bf [lower(w[1:end-1]), call]
+function bytecode(ctx::Context, code)
+  n = findfirst(ctx.icode, code)
+  n == 0 && (push!(ctx.icode, code); n = length(ctx.icode))
+  return n
+end
 
-lower_quotes(ctx, x) = x
-lower_quotes(ctx, w::Quote) = bytecode(ctx, Word(w))
-lower_quotes(ctx, w::Word) = Word(map(x -> lower_quotes(ctx, x), w.code))
+lower(ctx, w::Quote) = lower(ctx, bytecode(ctx, Word(w)))
+
+struct Call end
+
+words[:call] = Call()
 
 function partition(w::Word)
   w′ = Word([])
   cur = Word([])
   for w in w.code
-    if w == :call
+    if w == Call()
       push!(cur.code, :rpush)
       push!(w′.code, cur)
       cur = Word([])
@@ -191,25 +159,24 @@ function partition(w::Word)
   return w′
 end
 
-compiles[:interp!] = function (ctx::Context, w::Word)
-  compile(ctx, w[1:end-1])
+function compile_dynamic(ctx::Context, w::Word)
+  bytecode(ctx, w)
   is, i = [], 1
   while i ≤ length(ctx.icode)
     q = ctx.icode[i]
-    q isa Word && (q = partition(flatten(lower(q))))
+    q = partition(flatten(inline(ctx, q)))
     code = if q isa Word && length(q.code) > 1
       Word(reverse([bytecode(ctx, w) for w in q.code]))
     else
-      Flip(@bf [stack!, $(lower_quotes(ctx, q)), rstack!])
+      Flip(@bf [stack!, $q, rstack!])
     end
     push!(is, @bf [1, -, if!(:pass, @bf [drop, $code, 0])])
     i += 1
   end
-  compile(ctx, lower(Flip(@bf [[is..., drop], while!, rstack!])))
+  interp = @bf [[is..., drop], while!, rstack!]
+  compile_static(ctx, @bf [1, stackswitch!, Flip(interp)])
 end
 
-@bf call = [stackswitch!, interp!]
-
-@bf empty! = [[drop], while!]
-
-@bf halt = [[rstack!, Flip(:empty!)], call]
+function compile(w::Word)
+  compile_dynamic(Context(), w)
+end

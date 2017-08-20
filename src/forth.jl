@@ -1,3 +1,17 @@
+lower(ctx, i::Int) = lower(ctx, @bf [right!, repeated(:inc!, i), right!, inc!])
+
+@bf swap = [step!(-2), dec!, step!(-1), move!(1),
+            step!(2), move!(-2),
+            step!(-1), move!(1), inc!, step!(2)]
+
+@bf dup = [dec!, step!(-1), move!(1),
+           step!(1), move!(-1, 1), inc!,
+           step!(2), inc!]
+
+@bf empty! = [[drop], while!]
+
+@bf halt = [[rstack!, Flip(:empty!)], call]
+
 @bf ! = [left!, [right!, dec!, left!, reset!], while!, # Set flag, reset
          right!, [left!, inc!, right!, dec!], while!, inc!]
 
