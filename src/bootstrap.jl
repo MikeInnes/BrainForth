@@ -189,6 +189,8 @@ function compile_dynamic(ctx::Context, w::Word)
   compile_static(ctx, @bf [1, stackswitch!, Flip(interp)])
 end
 
-function compile(w::Word)
-  compile_dynamic(Context(), w)
-end
+isdynamic(x) = false
+isdynamic(x::Symbol) = x == :call || (haskey(words, x) && isdynamic(words[x]))
+isdynamic(w::Word) = any(isdynamic, w.code)
+
+compile(w::Word) = (isdynamic(w) ? compile_dynamic : compile_static)(Context(), w)
