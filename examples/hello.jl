@@ -9,4 +9,4 @@ cd(@__DIR__)
             "Here's your name in reverse: ", print,
             reverse, println]
 
-BrainForth.compile("hello.bf", @bf [[main], call])
+BrainForth.compile("hello.bf", @bf [main])

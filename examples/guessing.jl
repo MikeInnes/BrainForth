@@ -25,4 +25,4 @@ cd(@__DIR__)
 @bf main = [intro, getname, dupv, greeting,
             [1], [roll, game, "", println], loop]
 
-BrainForth.compile("guessing.bf", @bf [[main], call])
+BrainForth.compile("guessing.bf", @bf [main])
