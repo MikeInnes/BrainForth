@@ -1,6 +1,4 @@
-using BrainForth: @bf
-
-cd(@__DIR__)
+using BrainForth: @bf, @run
 
 # --
 @bf intro = ["The Guessing Game: Guess a number from 0-255!", println]
@@ -25,4 +23,4 @@ cd(@__DIR__)
 @bf main = [intro, getname, dupv, greeting,
             [1], [roll, game, "", println], loop]
 
-BrainForth.compile("guessing.bf", @bf [main])
+@run [main]

@@ -1,6 +1,4 @@
-using BrainForth: @bf
-
-cd(@__DIR__)
+using BrainForth: @bf, @run
 
 @bf promptr = [["Enter your name: ", prompt], whileempty]
 @bf greeting = ["Hello, ", print, print, "!", println]
@@ -9,4 +7,4 @@ cd(@__DIR__)
             "Here's your name in reverse: ", print,
             reverse, println]
 
-BrainForth.compile("hello.bf", @bf [main])
+@run [main]
