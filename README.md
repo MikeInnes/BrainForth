@@ -1,7 +1,7 @@
 # BrainForth
 
 ```julia
-Pkg.clone("https://github.com/MikeInnes/BrainForth")
+] add https://github.com/MikeInnes/BrainForth
 ```
 
 Brainforth is a small Forth-like language which compiles to brainfuck. This implementation has a brainfuck interpreter and a small Julia kernel for bootstrapping, then implements the stack abstraction and standard library functions in brainforth itself.

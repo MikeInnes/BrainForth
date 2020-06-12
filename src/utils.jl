@@ -4,7 +4,7 @@ bfrun(t::Tape, x) = interpret(t, compile(x))
 bfrun(x) = bfrun(Tape(), x)
 
 macro run(ex)
-  :(bfrun(@bf($(esc(ex)))))
+  :(bfrun($(bfm(ex))))
 end
 
 function stack(t::Tape)

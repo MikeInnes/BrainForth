@@ -1,5 +1,5 @@
+using BrainForth, Test
 using BrainForth: @bf, @run, stack
-using Base.Test
 
 @testset "BrainForth" begin
 

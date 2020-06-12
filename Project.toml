@@ -1,0 +1,11 @@
+name = "BrainForth"
+uuid = "9daf2519-9f75-4f96-ad46-c66cf981b602"
+
+[deps]
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

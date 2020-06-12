@@ -20,12 +20,12 @@ Base.:(==)(a::Tape, b::Tape) = a.tape == b.tape
 
 function left!(t::Tape)
   t.pos == length(t.tape) && t.tape[end] == 0 && pop!(t.tape)
-  t.pos == 1 ? unshift!(t.tape, 0) : (t.pos -= 1)
+  t.pos == 1 ? pushfirst!(t.tape, 0) : (t.pos -= 1)
   return
 end
 
 function right!(t::Tape)
-  t.pos == 1 && t.tape[1] == 0 && (shift!(t.tape); t.pos -= 1)
+  t.pos == 1 && t.tape[1] == 0 && (popfirst!(t.tape); t.pos -= 1)
   t.pos == length(t.tape) && push!(t.tape, 0)
   t.pos += 1
   return
@@ -45,7 +45,7 @@ end
 
 # Gets ~370 MHz
 
-function interpret(t::Tape, bf; input::IO = STDIN, output::IO = STDOUT)
+function interpret(t::Tape, bf; input::IO = stdin, output::IO = stdout)
   loops = Int[]
   scan = 0
   ip = 1

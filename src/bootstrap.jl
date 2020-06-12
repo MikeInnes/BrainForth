@@ -1,13 +1,17 @@
-import Base: ==, @get!
+import Base: ==
 
-macro bf(ex)
-  @capture(ex, x_ = [w__]) && return :(words[$(Expr(:quote, x))] = @bf [$(esc.(w)...)])
+function bfm(ex)
+  @capture(ex, x_ = [w__]) && return :(words[$(Expr(:quote, x))] = $(bfm(:[$(w...)])))
   @capture(ex, [xs__])
   xs = [isexpr(x, :$) ? esc(x.args[1]) :
         isexpr(x, Symbol) ? Expr(:quote, x) :
-        @capture(x, [w__]) ? :(Quote(@bf [$(esc.(w)...)])) :
+        @capture(x, [w__]) ? :(Quote($(bfm(:[$(w...)])))) :
         esc(x) for x in xs]
   :(Word([$(xs...)]))
+end
+
+macro bf(ex)
+  bfm(ex)
 end
 
 struct Native
@@ -19,7 +23,7 @@ struct Word
 end
 
 Base.getindex(w::Word, i::AbstractArray) = Word(w.code[i])
-Base.endof(w::Word) = endof(w.code)
+Base.lastindex(w::Word) = lastindex(w.code)
 
 struct Context
   icode::Vector{Any}
@@ -41,10 +45,10 @@ function lower(ctx, w::Word)
   w′ = Word([])
   for i = length(w.code):-1:1
     if haskey(cwords, w.code[i])
-      unshift!(w′.code, cwords[w.code[i]](ctx, w[1:i]))
+      pushfirst!(w′.code, cwords[w.code[i]](ctx, w[1:i]))
       return w′
     else
-      unshift!(w′.code, literal(ctx, w.code[i]))
+      pushfirst!(w′.code, literal(ctx, w.code[i]))
     end
   end
   return w′
@@ -53,8 +57,8 @@ end
 const words = Dict{Symbol,Any}()
 
 inline(ctx, x) = x
-inline(ctx, w::Symbol) = @get!(ctx.cache, w, inline(ctx, words[w]))
-inline(ctx, w::Word) = Word(inline.(ctx, lower(ctx, w).code))
+inline(ctx, w::Symbol) = get!(() -> inline(ctx, words[w]), ctx.cache, w)
+inline(ctx, w::Word) = Word(inline.((ctx,), lower(ctx, w).code))
 
 function flatten(w::Word)
   w′ = Word([])
@@ -144,8 +148,8 @@ cwords[:if!] = function (ctx, w::Word)
 end
 
 function bytecode(ctx::Context, code)
-  n = findfirst(ctx.icode, code)
-  n == 0 && (push!(ctx.icode, code); n = length(ctx.icode))
+  n = findfirst(==(code), ctx.icode)
+  n == nothing && (push!(ctx.icode, code); n = length(ctx.icode))
   return n
 end
 
